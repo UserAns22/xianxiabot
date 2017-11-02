@@ -9,7 +9,7 @@ SEQ_LENGTH = 64
 RNN_SIZE = 128
 output_dir = './models/'
 NUM_LAYERS = 2
-learning_rate = .01
+learning_rate = .1
 decay_rate = .97
 output_keep_prob = .97
 input_keep_prob = .97
@@ -42,6 +42,10 @@ class Model():
 
         embedding = tf.get_variable("embedding", [vocab_size, RNN_SIZE])
         inputs = tf.nn.embedding_lookup(embedding, self.input_data)
+        
+        if training and output_keep_prob:
+            inputs = tf.nn.dropout(inputs, output_keep_prob)
+        
 
         inputs = tf.split(inputs, SEQ_LENGTH, 1)
         inputs = [tf.squeeze(input_, [1]) for input_ in inputs]

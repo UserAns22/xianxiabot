@@ -7,7 +7,7 @@ from six.moves import cPickle
 from utils import TextLoader
 import rnn
 
-NUM_EPOCHS = 32
+NUM_EPOCHS = 2
 DATA_DIR = './data'
 SAVE_DIR = './output'
 
@@ -35,7 +35,7 @@ def train():
                 for j, s in enumerate(model.initial_state):
                     feed[s] = state[j]
                 
-                train_loss, state = sess.run([model.cost, model.final_state], feed)
+                train_loss, state, _= sess.run([model.cost, model.final_state, model.train_op], feed)
                 end = time.time()
                 print('{}/{} (epoch {}), train_loss = {}, time/batch = {}'.format(
                     curr_batch, NUM_EPOCHS * loader.num_batches, i, train_loss, end - start))
