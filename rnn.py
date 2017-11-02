@@ -14,19 +14,19 @@ decay_rate = .97
 output_keep_prob = .97
 input_keep_prob = .97
 grad_clip = 5.
-cell_fn = LSTMcell
+cell_fn = rnn.LSTMCell
 training = True
 
 "credits to https://github.com/sherjilozair/char-rnn-tensorflow/"
 
-class Model()
+class Model():
 
-    def __init__(self, args, training = True):
+    def __init__(self, vocab_size, training = True):
 
         cells = []
         for _ in range(NUM_LAYERS):
             cell = cell_fn(RNN_SIZE)
-            if training and (args.output_keep_prob < 1.0 or args.input_keep_prob < 1.0):
+            if training and (output_keep_prob < 1.0 or input_keep_prob < 1.0):
                 cell = rnn.DropoutWrapper(cell,
                     input_keep_prob=input_keep_prob,
                     output_keep_prob= output_keep_prob)
@@ -34,14 +34,14 @@ class Model()
         self.cell = rnn.MultiRNNCell(cells, state_is_tuple = True)
         self.input_data = tf.placeholder( tf.int32, [BATCH_SIZE, SEQ_LENGTH])
         self.targets = tf.placeholder( tf.int32, [BATCH_SIZE, SEQ_LENGTH])
-        self.initial_state = cell.zerostate(BATCH_SIZE, tf.float32)
+        self.initial_state = cell.zero_state([BATCH_SIZE], tf.float32)
 
         with tf.variable_scope('rnnlm'):
-            softmax_w = tf.get_variable("softmax_w",[RNN_SIZE, args.vocab_size])
-            softmax_b = tf.get_variable("softmax_b", [args.vocab_size])
+            softmax_w = tf.get_variable("softmax_w",[RNN_SIZE, vocab_size])
+            softmax_b = tf.get_variable("softmax_b", [vocab_size])
 
-        embedding = tf.get_variable("embedding", [args.vocab_size, RNN_SIZE])
-        inputs = tf.nn.embedding.lookup(embedding, self.input_data)
+        embedding = tf.get_variable("embedding", [vocab_size, RNN_SIZE])
+        inputs = tf.nn.embedding_lookup(embedding, self.input_data)
 
         inputs = tf.split(inputs, SEQ_LENGTH, 1)
         inputs = [tf.squeeze(input_, [1]) for input_ in inputs]
@@ -49,10 +49,12 @@ class Model()
         def loop(prev, _):
             prev = tf.matmul(prev,softmax_w) + softmax_b
             prev_symbol = tf.stop_gradient(tf.argmax(prev, 1))
-            return tf.nn.embedding.lookup(embedding, prev_symbol)
+            return tf.nn.embedding_lookup(embedding, prev_symbol)
 
+        if training:
+           loop = None
         outputs, last_state =  legacy_seq2seq.rnn_decoder(inputs, self.initial_state, cell, 
-                loop_function = loop if not training else None scope = 'rnnlm')
+                loop_function = loop, scope = 'rnnlm')
         output = tf.reshape(tf.concat(outputs, 1), [-1, RNN_SIZE])
         self.logits = tf.matmul(output, softmax_w) + softmax_b
         self.probs = tf.nn.softmax(self.logits)
@@ -67,7 +69,7 @@ class Model()
         tvars = tf.trainable_variables()
         grads = tf.clip_by_global_norm(tf.gradients(self.cost, tvars), grad_clip)[0]
         with tf.name_scope ('optimizer'):
-            tf.train.AdamOptimizer(self.lr)
+            optimizer = tf.train.AdamOptimizer(self.lr)
         self.train_op = optimizer.apply_gradients(zip(grads,tvars))
 
         tf.summary.histogram('logits', self.logits)
@@ -75,7 +77,7 @@ class Model()
         tf.summary.scalar('train_loss', self.cost) 
         
 
-    def sample(self, sess, chars, vocab, num=200, prime='The ', sampling_type=1):
+    def sample(self, sess, chars, vocab, num=200, prime='Chapter ', sampling_type=1):
         state = sess.run(self.cell.zero_state(1, tf.float32))
         for char in prime[:-1]:
             x = np.zeros((1, 1))
