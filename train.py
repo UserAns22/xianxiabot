@@ -7,17 +7,26 @@ from six.moves import cPickle
 from utils import TextLoader
 import rnn
 
-NUM_EPOCHS = 2
+NUM_EPOCHS = 50
 DATA_DIR = './data'
 SAVE_DIR = './output'
-
+init_from = None #SAVE_DIR
 
 
 def train():
     loader = TextLoader(DATA_DIR, rnn.BATCH_SIZE, rnn.SEQ_LENGTH)
     vocab_size = loader.vocab_size
+    
+    if init_from is not None:
+        ckpt = tf.train.get_checkpoint_state(init_from)
+        
+    with open(os.path.join(SAVE_DIR + 'conf.pkl'), 'wb') as f:
+        cPickle.dump((loader.vocab_size, loader.chars, loader.vocab))
+
     model = rnn.Model(vocab_size)
-    with tf.Session() as sess:
+
+    with tf.Session(config=tf.ConfigProto(
+            intra_op_parallelism_threads=1)) as sess:
 
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver(tf.global_variables())

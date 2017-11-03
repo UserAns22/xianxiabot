@@ -7,7 +7,6 @@ import numpy as np
 BATCH_SIZE = 32
 SEQ_LENGTH = 64
 RNN_SIZE = 128
-output_dir = './models/'
 NUM_LAYERS = 2
 learning_rate = .1
 decay_rate = .97
@@ -81,7 +80,7 @@ class Model():
         tf.summary.scalar('train_loss', self.cost) 
         
 
-    def sample(self, sess, chars, vocab, num=200, prime='Chapter ', sampling_type=1):
+    def sample(self, sess, chars, vocab, num=200, prime=' ', sampling_type=1):
         state = sess.run(self.cell.zero_state(1, tf.float32))
         for char in prime[:-1]:
             x = np.zeros((1, 1))
