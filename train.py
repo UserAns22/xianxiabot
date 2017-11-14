@@ -23,10 +23,10 @@ def train():
     with open(os.path.join(SAVE_DIR + 'conf.pkl'), 'wb') as f:
         cPickle.dump((loader.vocab_size, loader.chars, loader.vocab), f)
 
-    model = rnn.Model(vocab_size)
+    model = rnn.Model(vocab_size,True)
 
     with tf.Session(config=tf.ConfigProto(
-            intra_op_parallelism_threads=1)) as sess:
+            intra_op_parallelism_threads=2)) as sess:
 
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver(tf.global_variables())
@@ -46,9 +46,13 @@ def train():
                 
                 train_loss, state, _= sess.run([model.cost, model.final_state, model.train_op], feed)
                 end = time.time()
-                print('{}/{} (epoch {}), train_loss = {}, time/batch = {}, time_left = {}'.format(
-                    curr_batch, NUM_EPOCHS * loader.num_batches, i, train_loss, end - start,
-                    ((end - start) * (NUM_EPOCHS * loader.num_batches - curr_batch))))
+                print(('{0}/{1} (epoch {2}),' +
+                    ' train_loss = {3:.2f},' + 
+                    ' time/batch = {4:.2f},' +
+                    ' time_left = {5:.2f}').format(
+                    curr_batch, NUM_EPOCHS * loader.num_batches, i, 
+                    train_loss, end - start,
+                    ((end - start) / 3600 * (NUM_EPOCHS * loader.num_batches - curr_batch))))
                 if curr_batch % 1000 == 0 or ( i == (NUM_EPOCHS - 1) and (b == loader.num_batches - 1)):
                     ckpath = os.path.join(SAVE_DIR, 'model.ckpt')
                     saver.save(sess, ckpath, global_step = curr_batch)

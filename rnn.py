@@ -4,24 +4,30 @@ from tensorflow.contrib import legacy_seq2seq
 
 import numpy as np
 
+#training = True
+
+"credits to https://github.com/sherjilozair/char-rnn-tensorflow/"
+
 BATCH_SIZE = 32
-SEQ_LENGTH = 64
-RNN_SIZE = 128
-NUM_LAYERS = 2
 learning_rate = .01
 decay_rate = .97
 output_keep_prob = .97
 input_keep_prob = .97
 grad_clip = 5.
 cell_fn = rnn.LSTMCell
-training = True
-
-"credits to https://github.com/sherjilozair/char-rnn-tensorflow/"
+NUM_LAYERS = 2
+RNN_SIZE = 128
+SEQ_LENGTH = 64
 
 class Model():
 
-    def __init__(self, vocab_size, training = True):
+    def __init__(self, vocab_size, training,
+            BATCH_SIZE = BATCH_SIZE, SEQ_LENGTH = SEQ_LENGTH):
 
+        if not training:
+            BATCH_SIZE = 1
+            SEQ_LENGTH = 1
+        
         cells = []
         for _ in range(NUM_LAYERS):
             cell = cell_fn(RNN_SIZE)
@@ -29,12 +35,13 @@ class Model():
                 cell = rnn.DropoutWrapper(cell,
                     input_keep_prob=input_keep_prob,
                     output_keep_prob= output_keep_prob)
+            print('cell made')
             cells.append(cell)
                 
         self.cell = rnn.MultiRNNCell(cells, state_is_tuple = True)
         self.input_data = tf.placeholder( tf.int32, [BATCH_SIZE, SEQ_LENGTH])
         self.targets = tf.placeholder( tf.int32, [BATCH_SIZE, SEQ_LENGTH])
-        self.initial_state = cell.zero_state([BATCH_SIZE], tf.float32)
+        self.initial_state = self.cell.zero_state([BATCH_SIZE], tf.float32)
 
         with tf.variable_scope('rnnlm'):
             softmax_w = tf.get_variable("softmax_w",[RNN_SIZE, vocab_size])
@@ -57,7 +64,7 @@ class Model():
 
         if training:
            loop = None
-        outputs, last_state =  legacy_seq2seq.rnn_decoder(inputs, self.initial_state, cell, 
+        outputs, last_state =  legacy_seq2seq.rnn_decoder(inputs, self.initial_state, self.cell, 
                 loop_function = loop, scope = 'rnnlm')
         output = tf.reshape(tf.concat(outputs, 1), [-1, RNN_SIZE])
         self.logits = tf.matmul(output, softmax_w) + softmax_b
@@ -82,7 +89,7 @@ class Model():
         
 
     def sample(self, sess, chars, vocab, num=200, prime=' ', sampling_type=1):
-        state = self.cell.zero_state(1, tf.float32)
+        state = sess.run(self.cell.zero_state(1, tf.float32))
         for char in prime[:-1]:
             x = np.zeros((1, 1))
             x[0, 0] = vocab[char]
