@@ -29,7 +29,8 @@ class Model():
                 cell = rnn.DropoutWrapper(cell,
                     input_keep_prob=input_keep_prob,
                     output_keep_prob= output_keep_prob)
-                cells.append(cell)
+            cells.append(cell)
+                
         self.cell = rnn.MultiRNNCell(cells, state_is_tuple = True)
         self.input_data = tf.placeholder( tf.int32, [BATCH_SIZE, SEQ_LENGTH])
         self.targets = tf.placeholder( tf.int32, [BATCH_SIZE, SEQ_LENGTH])
@@ -81,7 +82,7 @@ class Model():
         
 
     def sample(self, sess, chars, vocab, num=200, prime=' ', sampling_type=1):
-        state = sess.run(self.cell.zero_state(1, tf.float32))
+        state = self.cell.zero_state(1, tf.float32)
         for char in prime[:-1]:
             x = np.zeros((1, 1))
             x[0, 0] = vocab[char]
