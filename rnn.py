@@ -8,16 +8,16 @@ import numpy as np
 
 "credits to https://github.com/sherjilozair/char-rnn-tensorflow/"
 
-BATCH_SIZE = 32
-learning_rate = .01
+BATCH_SIZE = 64
+learning_rate = .002
 decay_rate = .97
-output_keep_prob = .97
-input_keep_prob = .97
+output_keep_prob = .75
+input_keep_prob = .75
 grad_clip = 5.
 cell_fn = rnn.LSTMCell
 NUM_LAYERS = 2
-RNN_SIZE = 128
-SEQ_LENGTH = 64
+RNN_SIZE = 256
+SEQ_LENGTH = 128
 
 class Model():
 
