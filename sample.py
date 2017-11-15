@@ -6,7 +6,7 @@ from six.moves import cPickle
 import rnn
 SAVE_DIR = './output'
 
-num_chars = 500
+num_chars = 200
 prime = ' ' #start with Meng Hao!
 sample = 1 #
 
@@ -18,7 +18,7 @@ def sample():
     with tf.Session() as sess:
         tf.global_variables_initializer().run()
         saver = tf.train.Saver(tf.global_variables())
-        ckpt = os.path.join(SAVE_DIR, 'model.ckpt-2000')
+        ckpt = os.path.join(SAVE_DIR, 'model.ckpt-1000')
         saver.restore(sess, ckpt)
         print(model.sample(sess, chars, vocab, num=num_chars,prime=prime, sampling_type=sample).encode('utf-8')) 
 

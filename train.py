@@ -7,7 +7,8 @@ from six.moves import cPickle
 from utils import TextLoader
 import rnn
 
-NUM_EPOCHS = 1
+
+NUM_EPOCHS = 2
 DATA_DIR = './data'
 SAVE_DIR = './output'
 init_from = SAVE_DIR
@@ -25,11 +26,12 @@ def train():
 
     model = rnn.Model(vocab_size,True)
 
-    with tf.Session(config=tf.ConfigProto(
-            intra_op_parallelism_threads=2)) as sess:
+    with tf.Session() as sess:
 
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver(tf.global_variables())
+        if init_from is not None:
+            saver.restore(sess, ckpt.model_checkpoint_path)
 
         for i in range(NUM_EPOCHS):
             sess.run(tf.assign(model.lr, rnn.learning_rate * (rnn.decay_rate ** i)))
